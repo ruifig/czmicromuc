@@ -1,0 +1,34 @@
+{
+	"name": "czmicromuc",
+	"keyword": "Utility code",
+	"description": "Miscellaneous utility code I use in my own projects",
+	"homepage": "https://crazygaze.com",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/ruifig/czmicromuc.git"
+	},
+	"version": "0.0.1",
+	"authors":{
+		"name" : "Rui Figueira",
+		"url": "https://crazygaze.com"
+	},
+	"exclude": [
+	],
+	"frameworks": "*",
+	"platforms": "*",
+	"build" : {
+		"unflags" : ["-std=c++11", "-std=gnu+11"],
+		"flags" : [ "-std=c++17", "-std=gnu++17"]
+	},
+
+	"examples" : [
+		{
+			"name" : "example1",
+			"base" : "examples/example1",
+			"files" : [
+				"example1.ino"
+			]
+		}
+	]
+}
+
