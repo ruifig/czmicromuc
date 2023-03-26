@@ -5,6 +5,11 @@
 namespace cz
 {
 
+inline float mapValue(float ip, float ipmin, float ipmax, float tomin, float tomax)
+{
+  return tomin + (((tomax - tomin) * (ip - ipmin))/ (ipmax - ipmin));
+}
+
 inline bool isNearlyEqual(float a, float b, float errorTolerance = 1.e-8f)
 {
 	return abs(a-b) <= errorTolerance;
