@@ -179,7 +179,7 @@ struct FunctionTicker
   public:
 	FunctionTicker(FunctionTickerObj::FunctionType func_, float interval_) : ticker(true, func_, interval_) {}
 
-	void tick(float deltaSeconds) { ticker.tick(deltaSeconds); }
+	float tick(float deltaSeconds) { return ticker.tick(deltaSeconds); }
 
 	void setInterval(float deltaSeconds)
 	{
