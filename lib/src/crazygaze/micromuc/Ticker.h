@@ -1,9 +1,12 @@
 #pragma once
 
 #include <utility>
+#include <type_traits>
+
 
 namespace cz
 {
+
 namespace TickerPolicy
 {
 
@@ -76,6 +79,7 @@ struct TTimeAlwaysTick
 
 };  // namespace TickerPolicy
 
+
 template <class TObjectType, class TTimeType, class TTickingMethod = TickerPolicy::TTime<TTimeType> >
 class TTicker : public TTickingMethod
 {
@@ -83,14 +87,35 @@ class TTicker : public TTickingMethod
 	using ObjectType = TObjectType;
 	using TimeType = TTimeType;
 
-	TTicker(bool tickEnabled = true)
+	TTicker(const TTicker&) = delete;
+	TTicker& operator=(const TTicker&) = delete;
+
+
+	//
+	// Constructors only valid when we are holding the object itself
+	//
+	template<typename U = ObjectType>
+	explicit TTicker(typename std::enable_if_t<!std::is_pointer_v<U>, bool> tickEnabled = true)
+		: m_tickEnabled(tickEnabled)
 	{
-		m_tickEnabled = tickEnabled;
 		TTickingMethod::reset();
 	}
 
-	template <class... Args>
-	TTicker(bool tickEnabled, Args&&... args) : m_obj(std::forward<Args>(args)...), m_tickEnabled(tickEnabled)
+	template<typename U = ObjectType, class... Args>
+	explicit TTicker(typename std::enable_if_t<!std::is_pointer_v<U>, bool> tickEnabled, Args&&... args)
+		: m_obj(std::forward<Args>(args)...)
+		, m_tickEnabled(tickEnabled)
+	{
+		TTickingMethod::reset();
+	}
+
+	//
+	// Constructors only valid we are holding an object pointer
+	//
+	template<typename U = ObjectType>
+	explicit TTicker(typename std::enable_if_t<std::is_pointer_v<U>, U> objPtr, bool tickEnabled = true)
+		: m_tickEnabled(tickEnabled)
+		, m_obj(objPtr)
 	{
 		TTickingMethod::reset();
 	}
@@ -103,7 +128,13 @@ class TTicker : public TTickingMethod
 		{
 			if (TTickingMethod::update(deltatime))
 			{
-				auto res = m_obj.tick(m_timeSinceLastTick + deltatime);
+				TimeType res;
+
+				if constexpr(std::is_pointer_v<ObjectType>)
+					res = m_obj->tick(m_timeSinceLastTick + deltatime);
+				else
+					res = m_obj.tick(m_timeSinceLastTick + deltatime);
+
 				if (res == 0)
 					m_tickEnabled = false;
 				TTickingMethod::reset(res);
@@ -118,9 +149,15 @@ class TTicker : public TTickingMethod
 		return TTickingMethod::getCountdown();
 	}
 
-	ObjectType& getObj() { return m_obj; }
-	const ObjectType& getObj() const { return m_obj; }
-	
+
+	// If we are holding pointers, then return a pointer
+	template<typename U=ObjectType>
+	typename std::enable_if_t<std::is_pointer_v<U>, U> getObj() { return m_obj; }
+
+	// If we are holding objects, then return a reference
+	template<typename U=ObjectType>
+	typename std::enable_if_t<!std::is_pointer_v<U>, U&> getObj() { return m_obj; }
+
 	// Not allowing these operators, because it would be too easy to mess it up by calling
 	// the object's tick function directly, since both TTicker and ObjectType has a tick function
 #if 0
@@ -193,4 +230,67 @@ struct FunctionTicker
 	TTicker<FunctionTickerObj, float> ticker;
 };
 
+
+template<class Obj>
+struct TMethodTickerObj
+{
+  public:
+	using MethodType = void (Obj::*)();
+
+	/*!
+	 * @param func Function to call
+	 * @param interval in seconds to call the function
+	 */
+	TMethodTickerObj(Obj& obj_, MethodType func_, float interval_)
+		: obj(obj_)
+		, func(func_)
+		, interval(interval_)
+	{
+	}
+
+	TMethodTickerObj() = default;
+	TMethodTickerObj(const TMethodTickerObj&) = default;
+
+	// So it works with Ticker
+	TMethodTickerObj* operator->() { return this; }
+
+	float tick(float /* deltaSeconds */)
+	{
+		(obj.*func)();
+		return interval;
+	}
+
+	Obj& obj;
+	MethodType func;
+	float interval = 0;
+};
+
+
+template<class Obj>
+struct TMethodTicker
+{
+  public:
+	TMethodTicker(const TMethodTicker&) = delete;
+	TMethodTicker& operator=(const TMethodTicker&) = delete;
+
+	TMethodTicker(Obj& obj_, void (Obj::*func_)(), float interval_)
+		: ticker(true, obj_, func_, interval_)
+	{
+	}
+
+	float tick(float deltaSeconds) { return ticker.tick(deltaSeconds); }
+
+	void setInterval(float deltaSeconds)
+	{
+		ticker.getObj().interval = deltaSeconds;
+		ticker.start(deltaSeconds);
+	}
+
+	void stop() { ticker.stop(); }
+
+  protected:
+	TTicker<TMethodTickerObj<Obj>, float> ticker;
+};
+
 }  // namespace cz
+

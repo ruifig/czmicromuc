@@ -8,7 +8,7 @@ extern cz::Profiler gProfiler;
 namespace cz
 {
 
-Profiler::Section::Section(const __FlashStringHelper* name)
+Profiler::Section::Section(const arduino::__FlashStringHelper* name)
 {
 	this->name = name;
 

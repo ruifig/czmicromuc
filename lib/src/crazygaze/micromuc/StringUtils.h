@@ -11,8 +11,13 @@
 namespace cz
 {
 
-#define CZ_TEMPORARY_STRING_MAX_SIZE 128
-#define CZ_TEMPORARY_STRING_MAX_NESTING 1
+#ifndef CZ_TEMPORARY_STRING_MAX_SIZE
+	#define CZ_TEMPORARY_STRING_MAX_SIZE 128
+#endif
+
+#ifndef CZ_TEMPORARY_STRING_MAX_NESTING
+	#define CZ_TEMPORARY_STRING_MAX_NESTING 1
+#endif
 
 char* getTemporaryString();
 const char* formatString(const char* format, ...);

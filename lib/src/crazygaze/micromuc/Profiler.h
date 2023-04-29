@@ -73,6 +73,8 @@ struct Profiler
 		cz::Profiler::Point gProfilerPoints[capacity]; \
 		cz::Profiler gProfiler(gProfilerPoints, capacity);
 
+	extern cz::Profiler gProfiler;
+
 	#define PROFILER_STARTRUN() gProfiler.startRun()
 	#define PROFILER_LOG() gProfiler.log()
 	#define PROFILER_RESET() gProfiler.reset()

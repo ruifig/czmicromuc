@@ -2,7 +2,7 @@
 
 #include <assert.h>
 
-namespace cz::microaudio
+namespace cz
 {
 
 template<typename T>
